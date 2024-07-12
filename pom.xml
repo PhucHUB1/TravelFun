@@ -50,6 +50,7 @@
 <!--            <version>1.4.2.Final</version>-->
 <!--        </dependency>-->
 
+
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>

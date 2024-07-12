@@ -1,13 +1,17 @@
 package com.example.travelfun.service;
 
 import com.example.travelfun.dtos.request.authentication.AuthenticationRequest;
+import com.example.travelfun.dtos.request.token.IntrospectRequest;
 import com.example.travelfun.dtos.response.AuthenticationResponse;
+import com.example.travelfun.dtos.response.IntrospectResponse;
 import com.example.travelfun.exception.AppException;
 import com.example.travelfun.exception.ErrorCode;
 import com.example.travelfun.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,6 +23,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -34,6 +39,24 @@ public class AuthenticationService {
     @NonFinal
     protected static final String SIGNER_KEY =
             "sEIexekimYU0HUKlCPPm58V+Smdyjuuza2GoZnwga/tBBvX7wgPbS2l5DoEyDuyA";
+
+    public IntrospectResponse introspect(IntrospectRequest request)
+            throws JOSEException, ParseException {
+        var token = request.getToken();
+
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        var verified = signedJWT.verify(verifier);
+
+        return IntrospectResponse.builder()
+                .valid( verified && expirationTime.after(new Date()))
+                .build();
+
+    }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var username = userRepository.findByUsername(request.getUsername())
